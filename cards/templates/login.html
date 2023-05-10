@@ -1,0 +1,44 @@
+{% extends "base_generic.html" %}
+
+{% load widget_tweaks %}
+
+{% block content %}
+  <div class="container d-flex justify-content-center vh-100 mt-4">
+    <div class="row">
+      <div class="col">
+        <h2>Login</h2>
+        <form method="post" class="mb-3">
+          {% csrf_token %}
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger" role="alert">
+              {{ form.non_field_errors }}
+            </div>
+          {% endif %}
+          <div class="mb-3">
+            {{ form.username.label_tag }}
+            {{ form.username|add_class:"form-control" }}
+            {% if form.username.errors %}
+              <div class="invalid-feedback d-block">
+                {{ form.username.errors }}
+              </div>
+            {% endif %}
+          </div>
+          <div class="mb-3">
+            {{ form.password.label_tag }}
+            {{ form.password|add_class:"form-control" }}
+            {% if form.password.errors %}
+              <div class="invalid-feedback d-block">
+                {{ form.password.errors }}
+              </div>
+            {% endif %}
+          </div>
+          <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+        <p>
+          Don't have an account? <a href="{% url 'register' %}">Register</a>
+        </p>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+

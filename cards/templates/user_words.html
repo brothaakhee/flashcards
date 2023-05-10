@@ -1,0 +1,143 @@
+{% extends 'base_generic.html' %}
+
+{% block content %}
+  <div id="app">
+    <div class="container mt-4">
+      <h2>User Words</h2>
+      <table class="table table-striped" v-if="words.length">
+        <thead>
+          <tr>
+            <th>Word</th>
+            <th>Definition</th>
+            <th>Bin</th>
+            <th>Next Review Time</th>
+            <th>Wrong Attempts</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="word in words">
+            <td>[[ word.word ]]</td>
+            <td>[[ word.definition ]]</td>
+            <td>[[ word.bin_number ]]</td>
+            <td>[[ formatNextReview(word.next_review) ]]</td>
+            <td>[[ word.wrong_attempts ]]</td>
+            <td>
+              <button class="btn btn-danger btn-sm" @click="deleteWord(word.id)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <nav aria-label="Page navigation">
+          <ul class="pagination justify-content-center">
+              <li class="page-item" :class="{ 'disabled': !prevPageUrl }">
+                  <a class="page-link" href="#" @click.prevent="previousPage">Previous</a>
+              </li>
+              <li class="page-item" :class="{ 'disabled': !nextPageUrl}">
+                  <a class="page-link" href="#" @click.prevent="nextPage">Next</a>
+              </li>
+          </ul>
+      </nav>
+      <div v-else>
+        <p>You have not added any Words yet. Use the form below to add a new Word.</p>
+      </div>
+      <form @submit.prevent="addWord">
+        <div class="form-group">
+          <label for="word">Word</label>
+          <input type="text" class="form-control" id="word" v-model="newWord" required>
+        </div>
+        <div class="form-group">
+          <label for="definition">Definition</label>
+          <textarea class="form-control" id="definition" v-model="newDefinition" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Add Word</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+      function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+          const cookies = document.cookie.split(';');
+          for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+              break;
+            }
+          }
+        }
+        return cookieValue;
+      }
+
+      const csrfToken = getCookie('csrftoken');
+
+      new Vue({
+        delimiters: ['[[', ']]'],
+        el: '#app',
+        data: {
+          words: [],
+          newWord: '',
+          newDefinition: '',
+          currentPage: 1,
+          nextPageUrl: null,
+          prevPageUrl: null,
+        },
+        methods: {
+          formatNextReview(nextReview) {
+              if (nextReview) {
+                const date = new Date(nextReview);
+                return date.toLocaleString();
+              } else {
+                return "N/A";
+              }
+          },
+          async getWords(pageUrl) {
+            const url = pageUrl || '/api/words/?page=' + this.currentPage;
+            const response = await fetch(url);
+            const data = await response.json();
+            this.words = data.results;
+            this.nextPageUrl = data.next;
+            this.prevPageUrl = data.previous;
+          },
+          async deleteWord(id) {
+            await fetch(`/api/words/${id}/`, {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+              },
+            });
+            await this.getWords();
+          },
+          async addWord() {
+            await fetch('/api/words/', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+              },
+              body: JSON.stringify({ word: this.newWord, definition: this.newDefinition }),
+            });
+            this.newWord = '';
+            this.newDefinition = '';
+            await this.getWords();
+          },
+          async nextPage() {
+            if (this.nextPageUrl) {
+              await this.getWords(this.nextPageUrl);
+            }
+          },
+          async previousPage() {
+            if (this.prevPageUrl) {
+              await this.getWords(this.prevPageUrl);
+            }
+          },
+        },
+        created() {
+          this.getWords();
+        },
+      });
+  </script>
+{% endblock %}

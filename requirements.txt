@@ -1,0 +1,6 @@
+Django
+django-rest-framework
+django-widget-tweaks
+faker
+pytest
+pytest-django

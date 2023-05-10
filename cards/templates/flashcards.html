@@ -1,0 +1,86 @@
+{% extends 'base_generic.html' %}
+
+{% block content %}
+    <div id="app" class="container d-flex justify-content-center mt-5 pt-5 vh-100">
+        <div v-if="message">
+            <h2>[[ message ]]</h2>
+        </div>
+        <div v-else>
+            <div class="card text-center mx-auto" style="width: 22rem;">
+              <div class="card-body">
+                <h5 class="card-title">[[ currentWord.word ]]</h5>
+                <button v-if="!showDefinition" class="btn btn-primary" v-on:click="showDefinition = true">Show Definition</button>
+                <p v-if="showDefinition" class="card-text">[[ currentWord.definition ]]</p>
+                <div v-if="showDefinition">
+                  <button class="btn btn-primary" v-on:click="answer(true)">I got it</button>
+                  <button class="btn btn-warning" v-on:click="answer(false)">I did not get it</button>
+                </div>
+              </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function getCookie(name) {
+          let cookieValue = null;
+          if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+              const cookie = cookies[i].trim();
+              if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+              }
+            }
+          }
+          return cookieValue;
+        }
+
+        const csrfToken = getCookie('csrftoken');
+
+        Vue.use(Toasted, {duration: 2000, position: 'top-center'});
+
+        new Vue({
+            delimiters: ['[[', ']]'],
+            el: '#app',
+            data: {
+                currentWord: {},
+                showDefinition: false,
+                message: '',
+            },
+            methods: {
+                getWord() {
+                    axios.get('/api/review_word/')
+                        .then(response => {
+                            if (response.data.message) {
+                                this.message = response.data.message;
+                            } else {
+                                this.currentWord = response.data;
+                                this.showDefinition = false;
+                            }
+                        });
+                },
+                answer(is_correct) {
+                    axios.put('/api/review_word/', {
+                        word_id: this.currentWord.id,
+                        is_correct: is_correct
+                    }, {
+                        headers: {
+                            'X-CSRFToken': csrfToken,
+                        },
+                    }).then(response => {
+                        this.showDefinition = false;
+                        this.getWord();
+                        if (is_correct) {
+                          this.$toasted.success('Good job!');
+                        } else {
+                          this.$toasted.error('Only human...');
+                        }
+                    });
+                },
+            },
+            mounted() {
+                this.getWord();
+            },
+        });
+    </script>
+{% endblock %}
