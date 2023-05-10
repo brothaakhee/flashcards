@@ -29,7 +29,13 @@ class ReviewWordView(generics.GenericAPIView):
 
     def get(self, request, *args, **kwargs):
         user = request.user
-        user_words = Word.objects.filter(user=user).exclude(
+        user_words = Word.objects.filter(user=user)
+        if not user_words:
+            return Response(
+                {"message": "I have no words for you. Try adding some."},
+                status=status.HTTP_200_OK,
+            )
+        user_words = user_words.exclude(
             bin_number__in=[Word.HARD_TO_REMEMBER, Word.NEVER_REVIEW_AGAIN]
         )
 
