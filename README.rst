@@ -41,6 +41,8 @@ Potential Improvements
   to search, filter, and order based on columns.
 - There is some duplication in the templates, could use some
   cleanup/consolidation.
+- Have a bulk word/definition creation tool for the user, so they don't have to
+  create each word individually
 - Spruce up UI/UX
 
 Getting Started
